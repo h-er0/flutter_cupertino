@@ -1,4 +1,5 @@
 import 'src/flutter_cupertino_platform_interface.dart';
+export 'src/cupertino_alert.dart';
 export 'src/cupertino_button.dart';
 
 class FlutterCupertino {

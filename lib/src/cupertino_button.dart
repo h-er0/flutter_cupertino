@@ -27,6 +27,9 @@ class CupertinoButton extends StatefulWidget {
   final double width;
   final double height;
 
+  /// Callback when the button is pressed.
+  final VoidCallback? onPressed;
+
   const CupertinoButton({
     super.key,
     this.text,
@@ -37,6 +40,7 @@ class CupertinoButton extends StatefulWidget {
     this.enableLiquid,
     this.width = 200,
     this.height = 50,
+    this.onPressed,
   }) : assert(
          text != null || systemIconName != null,
          'Either text or systemIconName must be provided',
@@ -87,28 +91,30 @@ class _CupertinoButtonState extends State<CupertinoButton> {
   Widget build(BuildContext context) {
     const String viewType = 'flutter_cupertino/view';
 
+    Widget buttonView;
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return SizedBox(
-        width: widget.width,
-        height: widget.height,
-        child: UiKitView(
-          viewType: viewType,
-          layoutDirection: TextDirection.ltr,
-          creationParams: _getCreationParams(),
-          creationParamsCodec: const StandardMessageCodec(),
-          onPlatformViewCreated: _onPlatformViewCreated,
-        ),
+      buttonView = UiKitView(
+        viewType: viewType,
+        layoutDirection: TextDirection.ltr,
+        creationParams: _getCreationParams(),
+        creationParamsCodec: const StandardMessageCodec(),
+        onPlatformViewCreated: _onPlatformViewCreated,
       );
-    }
-
-    return SizedBox(
-      width: widget.width,
-      height: widget.height,
-      child: Center(
+    } else {
+      buttonView = Center(
         child: Text(
           '${widget.text ?? widget.systemIconName} (Not supported on $defaultTargetPlatform)',
           style: TextStyle(color: widget.textColor ?? const Color(0xFF000000)),
         ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: widget.onPressed,
+      child: SizedBox(
+        width: widget.width,
+        height: widget.height,
+        child: buttonView,
       ),
     );
   }

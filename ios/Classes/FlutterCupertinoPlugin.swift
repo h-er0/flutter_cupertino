@@ -11,12 +11,30 @@ public class FlutterCupertinoPlugin: NSObject, FlutterPlugin {
     registrar.register(factory, withId: "flutter_cupertino/view")
   }
 
-  public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    switch call.method {
-    case "getPlatformVersion":
-      result("iOS " + UIDevice.current.systemVersion)
-    default:
-      result(FlutterMethodNotImplemented)
+    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        if call.method == "getPlatformVersion" {
+            result("iOS " + UIDevice.current.systemVersion)
+        } else if call.method == "showAlert" {
+            if let args = call.arguments as? [String: Any],
+               let actions = args["actions"] as? [[String: Any]] {
+                
+                let title = args["title"] as? String
+                let message = args["message"] as? String
+                
+                let controller = LiquidAlertController(title: title, message: message, actions: actions) { index in
+                    result(index)
+                }
+                
+                if let root = UIApplication.shared.keyWindow?.rootViewController {
+                    root.present(controller, animated: true, completion: nil)
+                } else {
+                    result(FlutterError(code: "NO_ROOT_VC", message: "No root view controller found", details: nil))
+                }
+            } else {
+                result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
+            }
+        } else {
+            result(FlutterMethodNotImplemented)
+        }
     }
-  }
 }

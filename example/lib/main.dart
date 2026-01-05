@@ -128,6 +128,44 @@ class _MyAppState extends State<MyApp> {
                     return const CircularProgressIndicator(strokeWidth: 2);
                   },
                 ),
+
+                const SizedBox(height: 30),
+                CupertinoButton(
+                  text: "Show Alert",
+                  color: Colors.orange,
+                  textColor: Colors.white,
+                  width: 200,
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => CupertinoAlert(
+                        title: const Text("Liquid Alert"),
+                        content: const Text(
+                          "This is a custom alert with liquid buttons.",
+                        ),
+                        actions: [
+                          CupertinoButton(
+                            text: "Cancel",
+                            color: Colors.redAccent,
+                            textColor: Colors.white,
+                            width:
+                                100, // Explicit width might be needed or handled by alert layout
+                            height: 44,
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          CupertinoButton(
+                            text: "OK",
+                            color: Colors.blueAccent,
+                            textColor: Colors.white,
+                            width: 100,
+                            height: 44,
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           ),
