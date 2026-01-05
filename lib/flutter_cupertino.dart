@@ -3,6 +3,8 @@ export 'src/cupertino_alert.dart';
 export 'src/cupertino_button.dart';
 export 'src/cupertino_slider.dart';
 export 'src/cupertino_switch.dart';
+export 'src/cupertino_segmented_control.dart';
+export 'src/cupertino_menu.dart';
 export 'src/cupertino_action_button.dart';
 
 class FlutterCupertino {

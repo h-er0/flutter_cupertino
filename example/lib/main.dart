@@ -17,6 +17,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   double _sliderValue = 0.5;
   bool _switchValue = false;
+  int _segmentedValue = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -38,28 +39,7 @@ class _MyAppState extends State<MyApp> {
                   style: TextStyle(color: Colors.white70),
                 ),
                 const SizedBox(height: 10),
-                const CupertinoButton(text: "Liquid Glass"),
 
-                const SizedBox(height: 30),
-                const Text(
-                  "Custom Colors (Tinted)",
-                  style: TextStyle(color: Colors.white70),
-                ),
-                const SizedBox(height: 10),
-                CupertinoButton(
-                  text: "Pink Glass",
-                  color: Colors.pinkAccent,
-                  textColor: Colors.pink.shade100,
-                  width: 200,
-                ),
-                const SizedBox(height: 10),
-                const CupertinoButton(
-                  text: "Teal Glass",
-                  color: Colors.tealAccent,
-                  textColor: Colors.teal,
-                ),
-
-                const SizedBox(height: 30),
                 const Text(
                   "Icons & Symbols (SF Symbols)",
                   style: TextStyle(color: Colors.white70),
@@ -104,6 +84,18 @@ class _MyAppState extends State<MyApp> {
                   text: "Play Music",
                   controlSize: CupertinoControlSize.large,
                   systemIconName: "play.circle.fill",
+                  width: 220,
+                  height: 55,
+                  borderRadius: 27.5,
+                ),
+
+                const SizedBox(height: 30),
+                const CupertinoButton(
+                  style: CupertinoButtonStyle.glass,
+                  text: "Play Music",
+                  controlSize: CupertinoControlSize.large,
+                  systemIconName: "play.circle.fill",
+                  //iconBytes: Icons.home.toBytes(),
                   width: 220,
                   height: 55,
                   borderRadius: 27.5,
@@ -260,6 +252,99 @@ class _MyAppState extends State<MyApp> {
                 Text(
                   "Switch: $_switchValue",
                   style: const TextStyle(color: Colors.white70),
+                ),
+
+                const SizedBox(height: 30),
+                const Text(
+                  "Cupertino Segmented Control",
+                  style: TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 10),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: CupertinoSegmentedControl<int>(
+                    children: const {0: "Map", 1: "Transit", 2: "Satellite"},
+                    groupValue: _segmentedValue,
+                    onValueChanged: (value) {
+                      setState(() {
+                        _segmentedValue = value;
+                      });
+                    },
+                    // activeColor: Colors.blue,
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+                const Text(
+                  "Cupertino Popup Menu (Glass)",
+                  style: TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 10),
+                CupertinoMenu(
+                  label: "Options",
+                  systemIconName: "ellipsis.circle",
+                  width: 140,
+                  children: [
+                    CupertinoMenuItem(
+                      label: "Share",
+                      systemIconName: "square.and.arrow.up",
+                      onPressed: () => debugPrint("Share pressed"),
+                    ),
+                    CupertinoMenuItem(
+                      label: "Favorite",
+                      systemIconName: "star",
+                      onPressed: () => debugPrint("Favorite pressed"),
+                    ),
+                    const CupertinoMenuDivider(),
+                    CupertinoMenuItem(
+                      label: "More...",
+                      systemIconName: "ellipsis.circle",
+                      children: [
+                        CupertinoMenuItem(
+                          label: "Print",
+                          systemIconName: "printer",
+                          onPressed: () => debugPrint("Print pressed"),
+                        ),
+                        CupertinoMenuItem(
+                          label: "Save to Files",
+                          systemIconName: "folder",
+                          onPressed: () => debugPrint("Save pressed"),
+                        ),
+                      ],
+                    ),
+                    const CupertinoMenuDivider(),
+                    CupertinoMenuItem(
+                      label: "Delete",
+                      systemIconName: "trash",
+                      isDestructive: true,
+                      onPressed: () => debugPrint("Delete pressed"),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 30),
+                const Text(
+                  "Popover Mode (Glass Prominent)",
+                  style: TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 10),
+                CupertinoMenu(
+                  systemIconName: "chart.bar.doc.horizontal",
+                  style: CupertinoButtonStyle.glassProminent,
+                  usePopover: true,
+                  width: 60,
+                  children: [
+                    CupertinoMenuItem(
+                      label: "View Report",
+                      systemIconName: "doc.text",
+                      onPressed: () => debugPrint("View Report"),
+                    ),
+                    CupertinoMenuItem(
+                      label: "Analysis",
+                      systemIconName: "chart.pie",
+                      onPressed: () => debugPrint("Analysis"),
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: 30),

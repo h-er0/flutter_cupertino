@@ -19,6 +19,12 @@ public class FlutterCupertinoPlugin: NSObject, FlutterPlugin {
 
     let switchFactory = CupertinoSwitchFactory(messenger: registrar.messenger())
     registrar.register(switchFactory, withId: "flutter_cupertino/switch")
+    
+    let segmentedFactory = CupertinoSegmentedControlFactory(messenger: registrar.messenger())
+    registrar.register(segmentedFactory, withId: "flutter_cupertino/segmented")
+
+    let menuFactory = CupertinoMenuFactory(messenger: registrar.messenger())
+    registrar.register(menuFactory, withId: "flutter_cupertino/menu")
   }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
