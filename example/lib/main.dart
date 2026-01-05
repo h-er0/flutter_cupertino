@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_cupertino/flutter_cupertino.dart';
 
@@ -60,10 +62,10 @@ class _MyAppState extends State<MyApp> {
                   style: TextStyle(color: Colors.white70),
                 ),
                 const SizedBox(height: 10),
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CupertinoButton(
+                    const CupertinoButton(
                       systemIconName: "star.fill",
                       width: 60,
                       height: 60,
@@ -71,14 +73,18 @@ class _MyAppState extends State<MyApp> {
                       textColor: Colors.yellow,
                       borderRadius: 30, // Circular
                     ),
-                    SizedBox(width: 20),
+                    const SizedBox(width: 20),
                     CupertinoButton(
                       systemIconName: "heart.fill",
                       width: 60,
                       height: 60,
-                      color: Colors.red,
+                      //color: Colors.red,
                       textColor: Colors.white,
                       borderRadius: 20, // Squircleish
+                      style: CupertinoButtonStyle.glass,
+                      onPressed: () {
+                        log("Pressed");
+                      },
                     ),
                   ],
                 ),
@@ -90,6 +96,7 @@ class _MyAppState extends State<MyApp> {
                 ),
                 const SizedBox(height: 10),
                 const CupertinoButton(
+                  style: CupertinoButtonStyle.glass,
                   text: "Play Music",
                   systemIconName: "play.circle.fill",
                   width: 220,
@@ -99,15 +106,66 @@ class _MyAppState extends State<MyApp> {
 
                 const SizedBox(height: 30),
                 const Text(
-                  "Legacy Style (Liquid Disabled)",
+                  "Glass Styles",
                   style: TextStyle(color: Colors.white70),
                 ),
                 const SizedBox(height: 10),
                 const CupertinoButton(
-                  text: "Legacy Button",
-                  enableLiquid: false,
+                  text: "Glass Button",
+                  style: CupertinoButtonStyle.glass,
                   color: Colors.blue,
-                  textColor: Colors.white,
+                ),
+                const SizedBox(height: 10),
+                const CupertinoButton(
+                  text: "Prominent Glass",
+                  style: CupertinoButtonStyle.glassProminent,
+                  color: Colors.purple,
+                ),
+
+                const SizedBox(height: 30),
+                const Text(
+                  "SwiftUI Styles",
+                  style: TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 10),
+                const CupertinoButton(
+                  text: "Filled Style",
+                  style: CupertinoButtonStyle.filled,
+                  color: Colors.blue,
+                ),
+                const SizedBox(height: 10),
+                const CupertinoButton(
+                  text: "Tinted Style",
+                  style: CupertinoButtonStyle.tinted,
+                  color: Colors.purple,
+                ),
+                const SizedBox(height: 10),
+                const CupertinoButton(
+                  text: "Gray Style",
+                  style: CupertinoButtonStyle.gray,
+                  textColor: Colors.orange,
+                ),
+                const SizedBox(height: 10),
+                const CupertinoButton(
+                  text: "Plain Style",
+                  style: CupertinoButtonStyle.plain,
+                  textColor: Colors.red,
+                ),
+
+                const SizedBox(height: 30),
+                const Text(
+                  "Custom Text Style & Filled (Liquid)",
+                  style: TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 10),
+                const CupertinoButton(
+                  text: "Styled Button",
+                  textStyle: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                  color: Colors.purple,
                 ),
 
                 const SizedBox(height: 40),
@@ -136,33 +194,19 @@ class _MyAppState extends State<MyApp> {
                   textColor: Colors.white,
                   width: 200,
                   onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => CupertinoAlert(
-                        title: const Text("Liquid Alert"),
-                        content: const Text(
-                          "This is a custom alert with liquid buttons.",
+                    log("Show Alert");
+                    CupertinoAlert.show(
+                      context,
+                      title: "Liquid Alert",
+                      content: "This is a custom alert with liquid buttons.",
+
+                      actions: [
+                        CupertinoActionButton(
+                          text: "Cancel",
+                          style: CupertinoActionStyle.destructive,
+                          onPressed: () => debugPrint("Cancel pressed"),
                         ),
-                        actions: [
-                          CupertinoButton(
-                            text: "Cancel",
-                            color: Colors.redAccent,
-                            textColor: Colors.white,
-                            width:
-                                100, // Explicit width might be needed or handled by alert layout
-                            height: 44,
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          CupertinoButton(
-                            text: "OK",
-                            color: Colors.blueAccent,
-                            textColor: Colors.white,
-                            width: 100,
-                            height: 44,
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
+                      ],
                     );
                   },
                 ),

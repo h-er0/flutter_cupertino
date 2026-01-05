@@ -1,29 +1,32 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'cupertino_button.dart';
+import 'cupertino_action_button.dart';
 
 class CupertinoAlert {
-  static const MethodChannel _channel = MethodChannel(
-    'flutter_cupertino_plugin',
-  );
+  static const MethodChannel _channel = MethodChannel('flutter_cupertino');
 
   static Future<int?> show(
     BuildContext context, {
     String? title,
     String? content,
-    List<CupertinoButton> actions = const [],
+    List<CupertinoActionButton> actions = const [],
   }) async {
     final List<Map<String, dynamic>> actionParams = actions.map((btn) {
-      return {
-        if (btn.text != null) 'text': btn.text,
-        if (btn.systemIconName != null) 'systemIconName': btn.systemIconName,
-        if (btn.color != null) 'color': btn.color!.value,
-        if (btn.textColor != null) 'textColor': btn.textColor!.value,
-        'borderRadius': btn.borderRadius,
-        if (btn.enableLiquid != null) 'enableLiquid': btn.enableLiquid,
-        'width': btn.width,
-        'height': btn.height,
-      };
+      String styleName;
+      switch (btn.style) {
+        case CupertinoActionStyle.destructive:
+          styleName = 'destructive';
+          break;
+        case CupertinoActionStyle.cancel:
+          styleName = 'cancel';
+          break;
+        case CupertinoActionStyle.defaultValue:
+        default:
+          styleName = 'default';
+          break;
+      }
+
+      return {'text': btn.text, 'style': styleName};
     }).toList();
 
     try {

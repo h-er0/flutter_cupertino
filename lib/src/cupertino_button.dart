@@ -1,6 +1,17 @@
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+
+enum CupertinoButtonStyle {
+  automatic,
+  filled,
+  tinted,
+  gray,
+  plain,
+  glass,
+  glassProminent,
+}
 
 class CupertinoButton extends StatefulWidget {
   /// The text label of the button.
@@ -18,11 +29,11 @@ class CupertinoButton extends StatefulWidget {
   final Color? textColor;
 
   /// The border radius of the button.
-  final double borderRadius;
+  /// If null, uses the system default for the selected style.
+  final double? borderRadius;
 
-  /// Whether to force liquid style (iOS 13+ visual effect) or legacy.
-  /// If null, auto-detects based on system version (simulated logic in native for now).
-  final bool? enableLiquid;
+  /// The style of the button (SwiftUI style).
+  final CupertinoButtonStyle style;
 
   final double width;
   final double height;
@@ -30,20 +41,29 @@ class CupertinoButton extends StatefulWidget {
   /// Callback when the button is pressed.
   final VoidCallback? onPressed;
 
+  /// Custom text style for the button label.
+  final TextStyle? textStyle;
+
+  /// Custom icon bytes (e.g. from an asset or memory).
+  /// If provided, this takes precedence over [systemIconName].
+  final Uint8List? iconBytes;
+
   const CupertinoButton({
     super.key,
     this.text,
     this.systemIconName,
     this.color,
     this.textColor,
-    this.borderRadius = 16.0,
-    this.enableLiquid,
+    this.borderRadius,
+    this.style = CupertinoButtonStyle.automatic,
     this.width = 200,
     this.height = 50,
     this.onPressed,
+    this.textStyle,
+    this.iconBytes,
   }) : assert(
-         text != null || systemIconName != null,
-         'Either text or systemIconName must be provided',
+         text != null || systemIconName != null || iconBytes != null,
+         'Either text, systemIconName, or iconBytes must be provided',
        );
 
   @override
@@ -61,7 +81,9 @@ class _CupertinoButtonState extends State<CupertinoButton> {
         widget.color != oldWidget.color ||
         widget.textColor != oldWidget.textColor ||
         widget.borderRadius != oldWidget.borderRadius ||
-        widget.enableLiquid != oldWidget.enableLiquid) {
+        widget.style != oldWidget.style ||
+        widget.textStyle != oldWidget.textStyle ||
+        widget.iconBytes != oldWidget.iconBytes) {
       _updateNativeView();
     }
   }
@@ -78,13 +100,35 @@ class _CupertinoButtonState extends State<CupertinoButton> {
         'systemIconName': widget.systemIconName,
       if (widget.color != null) 'color': widget.color!.value,
       if (widget.textColor != null) 'textColor': widget.textColor!.value,
-      'borderRadius': widget.borderRadius,
-      if (widget.enableLiquid != null) 'enableLiquid': widget.enableLiquid,
+      if (widget.borderRadius != null) 'borderRadius': widget.borderRadius,
+      'style': widget.style.name,
+      if (widget.textStyle != null) ...{
+        if (widget.textStyle!.fontSize != null)
+          'fontSize': widget.textStyle!.fontSize,
+        if (widget.textStyle!.fontWeight != null)
+          'fontWeight': widget.textStyle!.fontWeight!.value,
+        if (widget.textStyle!.color != null)
+          'textColor': widget.textStyle!.color!.value,
+      },
+      if (widget.iconBytes != null) 'iconBytes': widget.iconBytes,
     };
   }
 
   void _onPlatformViewCreated(int id) {
     _channel = MethodChannel('flutter_cupertino/button_$id');
+    _channel?.setMethodCallHandler(_handleMethodCall);
+  }
+
+  Future<dynamic> _handleMethodCall(MethodCall call) async {
+    if (call.method == 'onPressed') {
+      widget.onPressed?.call();
+    }
+  }
+
+  @override
+  void dispose() {
+    _channel?.setMethodCallHandler(null);
+    super.dispose();
   }
 
   @override
@@ -101,21 +145,24 @@ class _CupertinoButtonState extends State<CupertinoButton> {
         onPlatformViewCreated: _onPlatformViewCreated,
       );
     } else {
-      buttonView = Center(
-        child: Text(
-          '${widget.text ?? widget.systemIconName} (Not supported on $defaultTargetPlatform)',
-          style: TextStyle(color: widget.textColor ?? const Color(0xFF000000)),
+      // Fallback for non-iOS platforms with GestureDetector for onPressed
+      buttonView = GestureDetector(
+        onTap: widget.onPressed,
+        child: Center(
+          child: Text(
+            '${widget.text ?? widget.systemIconName} (Not supported on $defaultTargetPlatform)',
+            style: TextStyle(
+              color: widget.textColor ?? const Color(0xFF000000),
+            ),
+          ),
         ),
       );
     }
 
-    return GestureDetector(
-      onTap: widget.onPressed,
-      child: SizedBox(
-        width: widget.width,
-        height: widget.height,
-        child: buttonView,
-      ),
+    return SizedBox(
+      width: widget.width,
+      height: widget.height,
+      child: buttonView,
     );
   }
 }
