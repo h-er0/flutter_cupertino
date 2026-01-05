@@ -3,6 +3,7 @@ import UIKit
 
 class LiquidView: NSObject, FlutterPlatformView {
     private var _view: UIView
+    private var _channel: FlutterMethodChannel
 
     init(
         frame: CGRect,
@@ -11,15 +12,37 @@ class LiquidView: NSObject, FlutterPlatformView {
         messenger: FlutterBinaryMessenger
     ) {
         _view = UIView()
+        // Register a unique channel for this view instance
+        _channel = FlutterMethodChannel(name: "flutter_cupertino/liquid_button_\(viewId)", binaryMessenger: messenger)
+        
         super.init()
+        
+        // Handle method calls from Flutter
+        _channel.setMethodCallHandler { [weak self] (call, result) in
+            self?.handle(call, result: result)
+        }
+        
         createNativeView(view: _view, arguments: args)
     }
 
     func view() -> UIView {
         return _view
     }
+    
+    func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        if call.method == "update" {
+            // Update the view with new arguments
+            createNativeView(view: _view, arguments: call.arguments)
+            result(nil)
+        } else {
+            result(FlutterMethodNotImplemented)
+        }
+    }
 
     func createNativeView(view: UIView, arguments: Any?) {
+        // Clear previous subviews to avoid stacking
+        view.subviews.forEach { $0.removeFromSuperview() }
+        
         let args = arguments as? [String: Any] ?? [:]
         
         // Simulating iOS 26 check / Liquid enablement

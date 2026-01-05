@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-class CupertinoLiquidButton extends StatelessWidget {
+class CupertinoLiquidButton extends StatefulWidget {
   /// The text label of the button.
   final String? text;
 
@@ -43,37 +43,71 @@ class CupertinoLiquidButton extends StatelessWidget {
        );
 
   @override
+  State<CupertinoLiquidButton> createState() => _CupertinoLiquidButtonState();
+}
+
+class _CupertinoLiquidButtonState extends State<CupertinoLiquidButton> {
+  MethodChannel? _channel;
+
+  @override
+  void didUpdateWidget(covariant CupertinoLiquidButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.text != oldWidget.text ||
+        widget.systemIconName != oldWidget.systemIconName ||
+        widget.color != oldWidget.color ||
+        widget.textColor != oldWidget.textColor ||
+        widget.borderRadius != oldWidget.borderRadius ||
+        widget.enableLiquid != oldWidget.enableLiquid) {
+      _updateNativeView();
+    }
+  }
+
+  void _updateNativeView() {
+    final Map<String, dynamic> params = _getCreationParams();
+    _channel?.invokeMethod('update', params);
+  }
+
+  Map<String, dynamic> _getCreationParams() {
+    return <String, dynamic>{
+      if (widget.text != null) 'text': widget.text,
+      if (widget.systemIconName != null)
+        'systemIconName': widget.systemIconName,
+      if (widget.color != null) 'color': widget.color!.value,
+      if (widget.textColor != null) 'textColor': widget.textColor!.value,
+      'borderRadius': widget.borderRadius,
+      if (widget.enableLiquid != null) 'enableLiquid': widget.enableLiquid,
+    };
+  }
+
+  void _onPlatformViewCreated(int id) {
+    _channel = MethodChannel('flutter_cupertino/liquid_button_$id');
+  }
+
+  @override
   Widget build(BuildContext context) {
     const String viewType = 'flutter_cupertino/view';
-    final Map<String, dynamic> creationParams = <String, dynamic>{
-      if (text != null) 'text': text,
-      if (systemIconName != null) 'systemIconName': systemIconName,
-      if (color != null) 'color': color!.value,
-      if (textColor != null) 'textColor': textColor!.value,
-      'borderRadius': borderRadius,
-      if (enableLiquid != null) 'enableLiquid': enableLiquid,
-    };
 
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       return SizedBox(
-        width: width,
-        height: height,
+        width: widget.width,
+        height: widget.height,
         child: UiKitView(
           viewType: viewType,
           layoutDirection: TextDirection.ltr,
-          creationParams: creationParams,
+          creationParams: _getCreationParams(),
           creationParamsCodec: const StandardMessageCodec(),
+          onPlatformViewCreated: _onPlatformViewCreated,
         ),
       );
     }
 
     return SizedBox(
-      width: width,
-      height: height,
+      width: widget.width,
+      height: widget.height,
       child: Center(
         child: Text(
-          '${text ?? systemIconName} (Not supported on $defaultTargetPlatform)',
-          style: TextStyle(color: textColor ?? const Color(0xFF000000)),
+          '${widget.text ?? widget.systemIconName} (Not supported on $defaultTargetPlatform)',
+          style: TextStyle(color: widget.textColor ?? const Color(0xFF000000)),
         ),
       ),
     );
