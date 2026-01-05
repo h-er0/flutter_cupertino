@@ -13,7 +13,7 @@ class LiquidView: NSObject, FlutterPlatformView {
     ) {
         _view = UIView()
         // Register a unique channel for this view instance
-        _channel = FlutterMethodChannel(name: "flutter_cupertino/liquid_button_\(viewId)", binaryMessenger: messenger)
+        _channel = FlutterMethodChannel(name: "flutter_cupertino/button_\(viewId)", binaryMessenger: messenger)
         
         super.init()
         

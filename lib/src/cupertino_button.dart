@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-class CupertinoLiquidButton extends StatefulWidget {
+class CupertinoButton extends StatefulWidget {
   /// The text label of the button.
   final String? text;
 
@@ -27,7 +27,7 @@ class CupertinoLiquidButton extends StatefulWidget {
   final double width;
   final double height;
 
-  const CupertinoLiquidButton({
+  const CupertinoButton({
     super.key,
     this.text,
     this.systemIconName,
@@ -43,14 +43,14 @@ class CupertinoLiquidButton extends StatefulWidget {
        );
 
   @override
-  State<CupertinoLiquidButton> createState() => _CupertinoLiquidButtonState();
+  State<CupertinoButton> createState() => _CupertinoButtonState();
 }
 
-class _CupertinoLiquidButtonState extends State<CupertinoLiquidButton> {
+class _CupertinoButtonState extends State<CupertinoButton> {
   MethodChannel? _channel;
 
   @override
-  void didUpdateWidget(covariant CupertinoLiquidButton oldWidget) {
+  void didUpdateWidget(covariant CupertinoButton oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.text != oldWidget.text ||
         widget.systemIconName != oldWidget.systemIconName ||
@@ -80,7 +80,7 @@ class _CupertinoLiquidButtonState extends State<CupertinoLiquidButton> {
   }
 
   void _onPlatformViewCreated(int id) {
-    _channel = MethodChannel('flutter_cupertino/liquid_button_$id');
+    _channel = MethodChannel('flutter_cupertino/button_$id');
   }
 
   @override

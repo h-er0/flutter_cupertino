@@ -33,7 +33,7 @@ class _MyAppState extends State<MyApp> {
                   style: TextStyle(color: Colors.white70),
                 ),
                 const SizedBox(height: 10),
-                const CupertinoLiquidButton(text: "Liquid Glass"),
+                const CupertinoButton(text: "Liquid Glass"),
 
                 const SizedBox(height: 30),
                 const Text(
@@ -41,14 +41,14 @@ class _MyAppState extends State<MyApp> {
                   style: TextStyle(color: Colors.white70),
                 ),
                 const SizedBox(height: 10),
-                CupertinoLiquidButton(
+                CupertinoButton(
                   text: "Pink Glass",
                   color: Colors.pinkAccent,
                   textColor: Colors.pink.shade100,
                   width: 200,
                 ),
                 const SizedBox(height: 10),
-                const CupertinoLiquidButton(
+                const CupertinoButton(
                   text: "Teal Glass",
                   color: Colors.tealAccent,
                   textColor: Colors.teal,
@@ -63,7 +63,7 @@ class _MyAppState extends State<MyApp> {
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CupertinoLiquidButton(
+                    CupertinoButton(
                       systemIconName: "star.fill",
                       width: 60,
                       height: 60,
@@ -72,7 +72,7 @@ class _MyAppState extends State<MyApp> {
                       borderRadius: 30, // Circular
                     ),
                     SizedBox(width: 20),
-                    CupertinoLiquidButton(
+                    CupertinoButton(
                       systemIconName: "heart.fill",
                       width: 60,
                       height: 60,
@@ -89,7 +89,7 @@ class _MyAppState extends State<MyApp> {
                   style: TextStyle(color: Colors.white70),
                 ),
                 const SizedBox(height: 10),
-                const CupertinoLiquidButton(
+                const CupertinoButton(
                   text: "Play Music",
                   systemIconName: "play.circle.fill",
                   width: 220,
@@ -103,7 +103,7 @@ class _MyAppState extends State<MyApp> {
                   style: TextStyle(color: Colors.white70),
                 ),
                 const SizedBox(height: 10),
-                const CupertinoLiquidButton(
+                const CupertinoButton(
                   text: "Legacy Button",
                   enableLiquid: false,
                   color: Colors.blue,

@@ -1,5 +1,5 @@
 import 'src/flutter_cupertino_platform_interface.dart';
-export 'src/cupertino_liquid_button.dart';
+export 'src/cupertino_button.dart';
 
 class FlutterCupertino {
   FlutterCupertino._();
