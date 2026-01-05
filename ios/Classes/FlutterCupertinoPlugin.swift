@@ -16,6 +16,9 @@ public class FlutterCupertinoPlugin: NSObject, FlutterPlugin {
 
     let sliderFactory = CupertinoSliderFactory(messenger: registrar.messenger())
     registrar.register(sliderFactory, withId: "flutter_cupertino/slider")
+
+    let switchFactory = CupertinoSwitchFactory(messenger: registrar.messenger())
+    registrar.register(switchFactory, withId: "flutter_cupertino/switch")
   }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {

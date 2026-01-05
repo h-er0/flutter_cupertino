@@ -16,6 +16,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   double _sliderValue = 0.5;
+  bool _switchValue = false;
 
   @override
   Widget build(BuildContext context) {
@@ -208,6 +209,41 @@ class _MyAppState extends State<MyApp> {
                 ),
                 Text(
                   "Value: ${_sliderValue.toStringAsFixed(2)}",
+                  style: const TextStyle(color: Colors.white70),
+                ),
+
+                const SizedBox(height: 30),
+                const Text(
+                  "Cupertino Switch",
+                  style: TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CupertinoSwitch(
+                      value: _switchValue,
+                      onChanged: (value) {
+                        setState(() {
+                          _switchValue = value;
+                        });
+                      },
+                      activeColor: Colors.blueAccent,
+                    ),
+                    const SizedBox(width: 20),
+                    CupertinoSwitch(
+                      value: !_switchValue,
+                      onChanged: (value) {
+                        setState(() {
+                          _switchValue = !value;
+                        });
+                      },
+                      activeColor: Colors.purpleAccent,
+                    ),
+                  ],
+                ),
+                Text(
+                  "Switch: $_switchValue",
                   style: const TextStyle(color: Colors.white70),
                 ),
 
