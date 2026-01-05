@@ -13,6 +13,9 @@ public class FlutterCupertinoPlugin: NSObject, FlutterPlugin {
     
     let textFieldFactory = CupertinoTextFieldFactory(messenger: registrar.messenger())
     registrar.register(textFieldFactory, withId: "flutter_cupertino/textfield")
+
+    let sliderFactory = CupertinoSliderFactory(messenger: registrar.messenger())
+    registrar.register(sliderFactory, withId: "flutter_cupertino/slider")
   }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {

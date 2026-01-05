@@ -15,6 +15,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  double _sliderValue = 0.5;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -75,7 +77,7 @@ class _MyAppState extends State<MyApp> {
                     ),
                     const SizedBox(width: 20),
                     CupertinoButton(
-                      systemIconName: "heart.fill",
+                      systemIconName: "checkmark",
                       isCircle: true,
                       height: 50,
                       width: 50,
@@ -187,6 +189,26 @@ class _MyAppState extends State<MyApp> {
                     }
                     return const CircularProgressIndicator(strokeWidth: 2);
                   },
+                ),
+
+                const SizedBox(height: 30),
+                const Text(
+                  "Cupertino Slider",
+                  style: TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 10),
+                CupertinoSlider(
+                  value: _sliderValue,
+                  onChanged: (value) {
+                    setState(() {
+                      _sliderValue = value;
+                    });
+                  },
+                  activeColor: Colors.green,
+                ),
+                Text(
+                  "Value: ${_sliderValue.toStringAsFixed(2)}",
+                  style: const TextStyle(color: Colors.white70),
                 ),
 
                 const SizedBox(height: 30),
