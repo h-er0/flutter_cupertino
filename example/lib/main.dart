@@ -76,11 +76,12 @@ class _MyAppState extends State<MyApp> {
                     const SizedBox(width: 20),
                     CupertinoButton(
                       systemIconName: "heart.fill",
-                      width: 60,
-                      height: 60,
+                      isCircle: true,
+                      height: 50,
+                      width: 50,
+                      controlSize: CupertinoControlSize.large,
                       //color: Colors.red,
                       textColor: Colors.white,
-                      borderRadius: 20, // Squircleish
                       style: CupertinoButtonStyle.glass,
                       onPressed: () {
                         log("Pressed");
@@ -98,6 +99,7 @@ class _MyAppState extends State<MyApp> {
                 const CupertinoButton(
                   style: CupertinoButtonStyle.glass,
                   text: "Play Music",
+                  controlSize: CupertinoControlSize.large,
                   systemIconName: "play.circle.fill",
                   width: 220,
                   height: 55,

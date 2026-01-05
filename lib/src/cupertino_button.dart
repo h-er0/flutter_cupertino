@@ -13,6 +13,8 @@ enum CupertinoButtonStyle {
   glassProminent,
 }
 
+enum CupertinoControlSize { mini, small, regular, large, extraLarge }
+
 class CupertinoButton extends StatefulWidget {
   /// The text label of the button.
   final String? text;
@@ -35,6 +37,12 @@ class CupertinoButton extends StatefulWidget {
   /// The style of the button (SwiftUI style).
   final CupertinoButtonStyle style;
 
+  /// The size of the control.
+  final CupertinoControlSize controlSize;
+
+  /// Whether to force a circular shape (useful for icon-only buttons).
+  final bool? isCircle;
+
   final double width;
   final double height;
 
@@ -56,6 +64,8 @@ class CupertinoButton extends StatefulWidget {
     this.textColor,
     this.borderRadius,
     this.style = CupertinoButtonStyle.automatic,
+    this.controlSize = CupertinoControlSize.regular,
+    this.isCircle,
     this.width = 200,
     this.height = 50,
     this.onPressed,
@@ -82,6 +92,8 @@ class _CupertinoButtonState extends State<CupertinoButton> {
         widget.textColor != oldWidget.textColor ||
         widget.borderRadius != oldWidget.borderRadius ||
         widget.style != oldWidget.style ||
+        widget.controlSize != oldWidget.controlSize ||
+        widget.isCircle != oldWidget.isCircle ||
         widget.textStyle != oldWidget.textStyle ||
         widget.iconBytes != oldWidget.iconBytes) {
       _updateNativeView();
@@ -102,6 +114,8 @@ class _CupertinoButtonState extends State<CupertinoButton> {
       if (widget.textColor != null) 'textColor': widget.textColor!.value,
       if (widget.borderRadius != null) 'borderRadius': widget.borderRadius,
       'style': widget.style.name,
+      'controlSize': widget.controlSize.name,
+      if (widget.isCircle != null) 'isCircle': widget.isCircle,
       if (widget.textStyle != null) ...{
         if (widget.textStyle!.fontSize != null)
           'fontSize': widget.textStyle!.fontSize,

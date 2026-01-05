@@ -10,6 +10,9 @@ public class FlutterCupertinoPlugin: NSObject, FlutterPlugin {
     
     let factory = CupertinoButtonFactory(messenger: registrar.messenger())
     registrar.register(factory, withId: "flutter_cupertino/view")
+    
+    let textFieldFactory = CupertinoTextFieldFactory(messenger: registrar.messenger())
+    registrar.register(textFieldFactory, withId: "flutter_cupertino/textfield")
   }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {

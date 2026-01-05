@@ -61,6 +61,8 @@ class CupertinoButtonController: NSObject, FlutterPlatformView {
             fontWeight: props.fontWeight,
             cornerRadius: props.cornerRadius,
             style: props.style,
+            controlSize: props.controlSize,
+            isCircle: props.isCircle,
             onPressed: { [weak self] in
                 self?._channel.invokeMethod("onPressed", arguments: nil)
             }
@@ -69,6 +71,7 @@ class CupertinoButtonController: NSObject, FlutterPlatformView {
         _hostingController = UIHostingController(rootView: rootView)
         _hostingController?.view.frame = frame
         _hostingController?.view.backgroundColor = .clear
+        _hostingController?.view.clipsToBounds = false
         
         _channel.setMethodCallHandler { [weak self] (call, result) in
             self?.handle(call, result: result)
@@ -92,6 +95,8 @@ class CupertinoButtonController: NSObject, FlutterPlatformView {
                 fontWeight: props.fontWeight,
                 cornerRadius: props.cornerRadius,
                 style: props.style,
+                controlSize: props.controlSize,
+                isCircle: props.isCircle,
                 onPressed: { [weak self] in
                     self?._channel.invokeMethod("onPressed", arguments: nil)
                 }
@@ -112,6 +117,8 @@ class CupertinoButtonController: NSObject, FlutterPlatformView {
         let fontWeight: Font.Weight
         let cornerRadius: CGFloat?
         let style: String
+        let controlSize: String
+        let isCircle: Bool
     }
     
     private func parseArguments(_ args: Any?) -> ButtonProps {
@@ -138,6 +145,8 @@ class CupertinoButtonController: NSObject, FlutterPlatformView {
         let cornerRadius = dict["borderRadius"] as? CGFloat
         
         let style = dict["style"] as? String ?? "automatic"
+        let controlSize = dict["controlSize"] as? String ?? "regular"
+        let isCircle = dict["isCircle"] as? Bool ?? false
         
         return ButtonProps(
             text: text,
@@ -148,7 +157,9 @@ class CupertinoButtonController: NSObject, FlutterPlatformView {
             fontSize: fontSize,
             fontWeight: fontWeight,
             cornerRadius: cornerRadius,
-            style: style
+            style: style,
+            controlSize: controlSize,
+            isCircle: isCircle
         )
     }
     
