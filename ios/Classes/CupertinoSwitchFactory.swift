@@ -53,6 +53,8 @@ class CupertinoSwitchController: NSObject, FlutterPlatformView, ObservableObject
         
         let rootView = CupertinoSwitchView(
             value: Binding(get: { self.value }, set: { self.value = $0 }),
+            label: props.label,
+            labelsHidden: props.labelsHidden,
             activeColor: props.activeColor,
             thumbColor: props.thumbColor,
             onChanged: { [weak self] newValue in
@@ -80,6 +82,8 @@ class CupertinoSwitchController: NSObject, FlutterPlatformView, ObservableObject
             
             _hostingController?.rootView = CupertinoSwitchView(
                 value: Binding(get: { self.value }, set: { self.value = $0 }),
+                label: props.label,
+                labelsHidden: props.labelsHidden,
                 activeColor: props.activeColor,
                 thumbColor: props.thumbColor,
                 onChanged: { [weak self] newValue in
@@ -94,6 +98,8 @@ class CupertinoSwitchController: NSObject, FlutterPlatformView, ObservableObject
     
     private struct SwitchProps {
         let value: Bool
+        let label: String?
+        let labelsHidden: Bool
         let activeColor: Color?
         let thumbColor: Color?
     }
@@ -102,6 +108,8 @@ class CupertinoSwitchController: NSObject, FlutterPlatformView, ObservableObject
         let dict = args as? [String: Any] ?? [:]
         
         let value = dict["value"] as? Bool ?? false
+        let label = dict["label"] as? String
+        let labelsHidden = dict["labelsHidden"] as? Bool ?? true
         
         var activeColor: Color?
         if let val = dict["activeColor"] as? Int64 {
@@ -115,6 +123,8 @@ class CupertinoSwitchController: NSObject, FlutterPlatformView, ObservableObject
         
         return SwitchProps(
             value: value,
+            label: label,
+            labelsHidden: labelsHidden,
             activeColor: activeColor,
             thumbColor: thumbColor
         )

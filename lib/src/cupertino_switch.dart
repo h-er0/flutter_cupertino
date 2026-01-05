@@ -5,15 +5,21 @@ import 'package:flutter/widgets.dart';
 class CupertinoSwitch extends StatefulWidget {
   final bool value;
   final ValueChanged<bool>? onChanged;
+  final String? label;
+  final bool labelsHidden;
   final Color? activeColor;
   final Color? thumbColor;
+  final double? width;
 
   const CupertinoSwitch({
     super.key,
     required this.value,
     required this.onChanged,
+    this.label,
+    this.labelsHidden = true,
     this.activeColor,
     this.thumbColor,
+    this.width,
   });
 
   @override
@@ -27,8 +33,11 @@ class _CupertinoSwitchState extends State<CupertinoSwitch> {
   void didUpdateWidget(covariant CupertinoSwitch oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.value != oldWidget.value ||
+        widget.label != oldWidget.label ||
+        widget.labelsHidden != oldWidget.labelsHidden ||
         widget.activeColor != oldWidget.activeColor ||
-        widget.thumbColor != oldWidget.thumbColor) {
+        widget.thumbColor != oldWidget.thumbColor ||
+        widget.width != oldWidget.width) {
       _updateNativeView();
     }
   }
@@ -41,6 +50,8 @@ class _CupertinoSwitchState extends State<CupertinoSwitch> {
   Map<String, dynamic> _getCreationParams() {
     return <String, dynamic>{
       'value': widget.value,
+      if (widget.label != null) 'label': widget.label,
+      'labelsHidden': widget.labelsHidden,
       if (widget.activeColor != null) 'activeColor': widget.activeColor!.value,
       if (widget.thumbColor != null) 'thumbColor': widget.thumbColor!.value,
     };
@@ -72,17 +83,42 @@ class _CupertinoSwitchState extends State<CupertinoSwitch> {
 
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       // Standard iOS switch size is approx 51x31
-      return SizedBox(
-        width: 51,
-        height: 31,
-        child: UiKitView(
-          viewType: viewType,
-          layoutDirection: TextDirection.ltr,
-          creationParams: _getCreationParams(),
-          creationParamsCodec: const StandardMessageCodec(),
-          onPlatformViewCreated: _onPlatformViewCreated,
-        ),
+      // If label is shown, we need to allow more width.
+      Widget nativeView = UiKitView(
+        viewType: viewType,
+        layoutDirection: TextDirection.ltr,
+        creationParams: _getCreationParams(),
+        creationParamsCodec: const StandardMessageCodec(),
+        onPlatformViewCreated: _onPlatformViewCreated,
       );
+
+      // If we have a label and it's visible, we should calculate the width if not provided.
+      if (widget.label != null && !widget.labelsHidden) {
+        double width = widget.width ?? 0;
+
+        if (widget.width == null) {
+          // Estimate width based on text
+          final TextPainter textPainter = TextPainter(
+            text: TextSpan(
+              text: widget.label,
+              style: const TextStyle(
+                fontSize: 17, // Standard iOS body size
+                color: Color(0xFF000000), // Default text color
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            maxLines: 1,
+            textDirection: TextDirection.ltr,
+          )..layout();
+
+          // Switch width (51) + Spacing/Padding (approx 20) + Text width
+          width = textPainter.width + 51 + 20;
+        }
+
+        return SizedBox(width: width, height: 44, child: nativeView);
+      }
+
+      return SizedBox(width: 51, height: 31, child: nativeView);
     } else {
       return SizedBox(
         width: 51,

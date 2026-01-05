@@ -233,6 +233,9 @@ class _MyAppState extends State<MyApp> {
                     const SizedBox(width: 20),
                     CupertinoSwitch(
                       value: !_switchValue,
+                      label: "Mute",
+                      labelsHidden: false,
+                      // width: 100, // Explicit width removed, using auto-calculation
                       onChanged: (value) {
                         setState(() {
                           _switchValue = !value;
@@ -241,6 +244,18 @@ class _MyAppState extends State<MyApp> {
                       activeColor: Colors.purpleAccent,
                     ),
                   ],
+                ),
+                CupertinoSwitch(
+                  value: !_switchValue,
+                  label: "Mute",
+                  labelsHidden: false,
+                  // width: 100, // Explicit width removed, using auto-calculation
+                  onChanged: (value) {
+                    setState(() {
+                      _switchValue = !value;
+                    });
+                  },
+                  activeColor: Colors.purpleAccent,
                 ),
                 Text(
                   "Switch: $_switchValue",
