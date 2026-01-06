@@ -84,9 +84,6 @@ class _MyAppState extends State<MyApp> {
                   text: "Play Music",
                   controlSize: CupertinoControlSize.large,
                   systemIconName: "play.circle.fill",
-                  width: 220,
-                  height: 55,
-                  borderRadius: 27.5,
                 ),
 
                 const SizedBox(height: 30),
@@ -95,10 +92,8 @@ class _MyAppState extends State<MyApp> {
                   text: "Play Music",
                   controlSize: CupertinoControlSize.large,
                   systemIconName: "play.circle.fill",
+
                   //iconBytes: Icons.home.toBytes(),
-                  width: 220,
-                  height: 55,
-                  borderRadius: 27.5,
                 ),
 
                 const SizedBox(height: 30),
@@ -285,41 +280,88 @@ class _MyAppState extends State<MyApp> {
                   controlSize: CupertinoControlSize.large,
                   systemIconName: "ellipsis.circle",
                   width: 140,
-                  height: 50, // Increased height for large control
-                  children: [
-                    CupertinoMenuItem(
-                      label: "Share",
-                      systemIconName: "square.and.arrow.up",
-                      onPressed: () => debugPrint("Share pressed"),
-                    ),
-                    CupertinoMenuItem(
-                      label: "Favorite",
-                      systemIconName: "star",
-                      onPressed: () => debugPrint("Favorite pressed"),
-                    ),
-                    const CupertinoMenuDivider(),
-                    CupertinoMenuItem(
-                      label: "More...",
-                      systemIconName: "ellipsis.circle",
-                      children: [
+                  height: 38,
+                  sections: [
+                    CupertinoMenuActionRow(
+                      items: [
                         CupertinoMenuItem(
-                          label: "Print",
-                          systemIconName: "printer",
-                          onPressed: () => debugPrint("Print pressed"),
+                          label: "Label",
+                          systemIconName: "star.fill",
+                          onPressed: () => debugPrint("Star Header"),
                         ),
                         CupertinoMenuItem(
-                          label: "Save to Files",
-                          systemIconName: "folder",
-                          onPressed: () => debugPrint("Save pressed"),
+                          label: "Label",
+                          systemIconName: "star.fill",
+                          onPressed: () => debugPrint("Star Header 2"),
+                        ),
+                        CupertinoMenuItem(
+                          label: "Destructive",
+                          systemIconName: "star.fill",
+                          isDestructive: true,
+                          onPressed: () => debugPrint("Destructive Header"),
                         ),
                       ],
                     ),
-                    const CupertinoMenuDivider(),
-                    CupertinoMenuItem(
-                      label: "Delete",
-                      systemIconName: "trash",
-                      isDestructive: true,
-                      onPressed: () => debugPrint("Delete pressed"),
+                    CupertinoMenuSection(
+                      title: "Section Title",
+                      items: [
+                        CupertinoMenuItem(
+                          label: "Label",
+                          systemIconName: "selection.pin.in.out",
+                          trailingIconName: "command",
+                          onPressed: () => debugPrint("Label pressed"),
+                        ),
+                        CupertinoMenuItem(
+                          label: "Disabled Action",
+                          systemIconName: "selection.pin.in.out",
+                          isEnabled: false,
+                        ),
+                        CupertinoMenuItem(
+                          label: "Destructive Action",
+                          systemIconName: "selection.pin.in.out",
+                          isDestructive: true,
+                          onPressed: () => debugPrint("Destructive Action"),
+                        ),
+                      ],
+                    ),
+                    CupertinoMenuSection(
+                      items: [
+                        CupertinoMenuItem(
+                          label: "Action",
+                          systemIconName: "selection.pin.in.out",
+                          onPressed: () => debugPrint("Action pressed"),
+                        ),
+                      ],
+                    ),
+                    CupertinoMenuSection(
+                      title: "Section Title",
+                      items: [
+                        CupertinoMenuItem(
+                          label: "Submenu",
+                          children: [
+                            CupertinoMenuItem(label: "Child 1"),
+                            CupertinoMenuItem(label: "Child 2"),
+                          ],
+                        ),
+                        CupertinoMenuItem(
+                          label: "Submenu",
+                          children: [CupertinoMenuItem(label: "Child 1")],
+                        ),
+                        CupertinoMenuItem(
+                          label: "Submenu with a long title",
+                          children: [CupertinoMenuItem(label: "Child 1")],
+                        ),
+                      ],
+                    ),
+                    CupertinoMenuSection(
+                      title: "Section Title",
+                      items: [
+                        CupertinoMenuItem(
+                          label: "Action",
+                          systemIconName: "selection.pin.in.out",
+                          trailingIconName: "command",
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -339,16 +381,20 @@ class _MyAppState extends State<MyApp> {
                       systemIconName: "list.bullet",
                       width: 100,
                       height: 40,
-                      children: [
-                        CupertinoMenuItem(
-                          label: "View Report",
-                          systemIconName: "doc.text",
-                          onPressed: () => debugPrint("View Report"),
-                        ),
-                        CupertinoMenuItem(
-                          label: "Analysis",
-                          systemIconName: "chart.pie",
-                          onPressed: () => debugPrint("Analysis"),
+                      sections: [
+                        CupertinoMenuSection(
+                          items: [
+                            CupertinoMenuItem(
+                              label: "View Report",
+                              systemIconName: "doc.text",
+                              onPressed: () => debugPrint("View Report"),
+                            ),
+                            CupertinoMenuItem(
+                              label: "Analysis",
+                              systemIconName: "chart.pie",
+                              onPressed: () => debugPrint("Analysis"),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -359,16 +405,20 @@ class _MyAppState extends State<MyApp> {
                       systemIconName: "gear",
                       width: 80,
                       height: 32,
-                      children: [
-                        CupertinoMenuItem(
-                          label: "View Report",
-                          systemIconName: "doc.text",
-                          onPressed: () => debugPrint("View Report"),
-                        ),
-                        CupertinoMenuItem(
-                          label: "Analysis",
-                          systemIconName: "chart.pie",
-                          onPressed: () => debugPrint("Analysis"),
+                      sections: [
+                        CupertinoMenuSection(
+                          items: [
+                            CupertinoMenuItem(
+                              label: "View Report",
+                              systemIconName: "doc.text",
+                              onPressed: () => debugPrint("View Report"),
+                            ),
+                            CupertinoMenuItem(
+                              label: "Analysis",
+                              systemIconName: "chart.pie",
+                              onPressed: () => debugPrint("Analysis"),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -385,16 +435,25 @@ class _MyAppState extends State<MyApp> {
                   systemIconName: "chart.bar.doc.horizontal",
                   style: CupertinoButtonStyle.glassProminent,
                   width: 60,
-                  children: [
-                    CupertinoMenuItem(
-                      label: "View Report",
-                      systemIconName: "doc.text",
-                      onPressed: () => debugPrint("View Report"),
-                    ),
-                    CupertinoMenuItem(
-                      label: "Analysis",
-                      systemIconName: "chart.pie",
-                      onPressed: () => debugPrint("Analysis"),
+                  sections: [
+                    CupertinoMenuSection(
+                      items: [
+                        CupertinoMenuItem(
+                          label: "View Report",
+                          systemIconName: "doc.text",
+                          onPressed: () => debugPrint("View Report"),
+                        ),
+                        CupertinoMenuItem(
+                          label: "Analysis",
+                          systemIconName: "chart.pie",
+                          onPressed: () => debugPrint("Analysis"),
+                        ),
+                        CupertinoMenuItem(
+                          label: "Delete",
+                          isDestructive: true,
+                          systemIconName: "trash",
+                        ),
+                      ],
                     ),
                   ],
                 ),

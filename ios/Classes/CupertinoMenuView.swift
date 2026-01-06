@@ -74,10 +74,11 @@ class MenuState: ObservableObject {
     @Published var systemIconName: String?
     @Published var styleIndex: Int = 5
     @Published var controlSizeIndex: Int = 2
-    @Published var customColor: Color?
-    @Published var customTextColor: Color?
     @Published var borderRadius: CGFloat = 8
+    @Published var isCircle: Bool = false
     @Published var items: [MenuItem] = []
+    @Published var sections: [MenuSection] = []
+    @Published var headerActions: [MenuItem] = []
     
     // Explicitly process updates to trigger objectWillChange
     func update(from args: [String: Any]) {
@@ -90,27 +91,77 @@ class MenuState: ObservableObject {
         if let v = args["style"] as? Int { styleIndex = v }
         if let v = args["controlSize"] as? Int { controlSizeIndex = v }
         
-        if let c = args["color"] as? Int { customColor = Color(uiColor: UIColor(argb: c)) }
-        else if args.keys.contains("color") { customColor = nil }
-        
-        if let c = args["textColor"] as? Int { customTextColor = Color(uiColor: UIColor(argb: c)) }
-        else if args.keys.contains("textColor") { customTextColor = nil }
-        
         if let r = args["borderRadius"] as? Double { borderRadius = CGFloat(r) }
         
-        if let rawItems = args["items"] as? [[String: Any]] {
+        // Populate Header
+        if let rawHeader = args["header"] as? [[String: Any]] {
+             // Headers are parsed with path prefix [-1]
+             self.headerActions = parseItems(rawHeader, prefix: [-1])
+        } else {
+             self.headerActions = []
+        }
+        
+        // Populate Sections or Items
+        if let rawSections = args["sections"] as? [[String: Any]] {
+            self.sections = parseSections(rawSections)
+            self.items = [] // Clear flat items if sections exist
+        } else if let rawItems = args["items"] as? [[String: Any]] {
             self.items = parseItems(rawItems, prefix: [])
+            self.sections = []
+        }
+        
+        // Calculate isCircle default if not provided
+        if let c = args["isCircle"] as? Bool {
+            isCircle = c
+        } else {
+             let hasLabel = (label != nil && !label!.isEmpty)
+             let hasIcon = (systemIconName != nil && !systemIconName!.isEmpty)
+             
+             // "if only icon is provided or no icon provided, isCircle is by default on true"
+             if (hasIcon && !hasLabel) || (!hasIcon) {
+                 isCircle = true
+             } else {
+                 isCircle = false
+             }
         }
     }
     
+    private func parseSections(_ raw: [[String: Any]]) -> [MenuSection] {
+        var results: [MenuSection] = []
+        for (index, sectionDict) in raw.enumerated() {
+            let title = sectionDict["title"] as? String
+            let rawItems = sectionDict["items"] as? [[String: Any]] ?? []
+            // Section path prefix: [index]
+            let items = parseItems(rawItems, prefix: [index])
+            results.append(MenuSection(title: title, items: items))
+        }
+        return results
+    }
+    
+    // Modified parseItems to handle new fields
     private func parseItems(_ raw: [[String: Any]], prefix: [Int]) -> [MenuItem] {
         var results: [MenuItem] = []
         for item in raw {
             let label = item["label"] as? String ?? ""
             let icon = item["systemIconName"] as? String
             let isDestructive = item["isDestructive"] as? Bool ?? false
+            let isEnabled = item["isEnabled"] as? Bool ?? true
+            let trailingIcon = item["trailingIconName"] as? String
             let type = item["type"] as? String ?? "action"
             let index = item["index"] as? Int ?? 0
+            
+            // Path construction
+            // If prefix starts with -1 (header), path is [-1, index]
+            // If prefix is [sectionIndex], path is [sectionIndex, index]
+            // If prefix is empty (flat items), path is [index] (Wait, we need to be handled carefully in Dart)
+            // The Dart side expects:
+            // Sections: [sectionIndex, itemIndex]
+            // Flat: [itemIndex]
+            
+            // Here 'prefix' is the parent path.
+            // But 'index' coming from Dart might handle order.
+            // If parseItems is called for a Section, prefix=[sectionIndex].
+            // If we use 'index' from Dart map, that is the index in the list.
             
             let currentPath = prefix + [index]
             
@@ -123,6 +174,8 @@ class MenuState: ObservableObject {
                 label: label,
                 systemIconName: icon,
                 isDestructive: isDestructive,
+                isEnabled: isEnabled,
+                trailingIconName: trailingIcon,
                 type: type,
                 path: currentPath,
                 children: children
@@ -132,11 +185,19 @@ class MenuState: ObservableObject {
     }
 }
 
+struct MenuSection: Identifiable {
+    let id = UUID()
+    let title: String?
+    let items: [MenuItem]
+}
+
 struct MenuItem: Identifiable {
     let id = UUID()
     let label: String
     let systemIconName: String?
     let isDestructive: Bool
+    let isEnabled: Bool
+    let trailingIconName: String?
     let type: String
     let path: [Int]
     let children: [MenuItem]?
@@ -149,113 +210,109 @@ struct SwiftUIMenuView: View {
     var onItemSelected: ([Int]) -> Void
     
     var body: some View {
+        if #available(iOS 26.0, *) {
+            // Check for glass vs glassProminent
+            if state.styleIndex == 6 { // glassProminent
+                menuStructure
+                    .buttonStyle(.glassProminent) // Hypothetical
+                    .controlSize(controlSize)
+                    .isCircle(state.isCircle)
+            } else {
+                menuStructure
+                    .buttonStyle(.glass)
+                    .controlSize(controlSize)
+                    .isCircle(state.isCircle)
+            }
+        } else {
+            // iOS 15+ Fallback
+            if #available(iOS 15.0, *) {
+                menuStructure
+                    .buttonStyle(.plain)
+                    .controlSize(controlSize)
+                    .isCircle(state.isCircle)
+            } else {
+                menuStructure
+                    .buttonStyle(.plain)
+                    .isCircle(state.isCircle)
+            }
+        }
+    }
+    
+    @available(iOS 15.0, *)
+    var controlSize: ControlSize {
+        switch state.controlSizeIndex {
+        case 0: return .mini
+        case 1: return .small
+        case 2: return .regular
+        case 3: return .large
+        case 4:
+            if #available(iOS 17.0, *) {
+                return .extraLarge
+            } else {
+                return .large
+            }
+        default: return .regular
+        }
+    }
+
+    var menuStructure: some View {
         Menu {
-            MenuContent(items: state.items, onItemSelected: onItemSelected)
-        } label: {
-            // Trigger Button
-            // We apply the specific style based on the index, but leveraging the clean .glass style
-            Group {
-                if state.styleIndex == 5 || state.styleIndex == 6 {
-                    Button(action: {}) {
-                       labelContent
+            // Header Action Row
+            if !state.headerActions.isEmpty {
+                ControlGroup {
+                    ForEach(state.headerActions) { action in
+                        Button(role: action.isDestructive ? .destructive : nil) {
+                           onItemSelected(action.path)
+                        } label: {
+                           if let icon = action.systemIconName {
+                              Label(action.label, systemImage: icon)
+                           } else {
+                              Text(action.label)
+                           }
+                        }
+                        .disabled(!action.isEnabled)
                     }
-                    .buttonStyle(.cupertinoGlass)
-                } else {
-                    Button(action: {}) {
-                       labelContent
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(backgroundView)
-                    }
-                    .buttonStyle(.plain) // No extra padding/background from style
                 }
             }
-            .foregroundColor(state.customTextColor ?? defaultTextColor(style: state.styleIndex))
-            .font(fontForSize(state.controlSizeIndex))
-            .applyCornerRadius(state.borderRadius)
-            .allowsHitTesting(false)
+            
+            // Sections
+            if !state.sections.isEmpty {
+                ForEach(state.sections) { section in
+                    Section {
+                         MenuContent(items: section.items, onItemSelected: onItemSelected)
+                    } header: {
+                        if let title = section.title, !title.isEmpty {
+                            Text(title)
+                        }
+                    }
+                }
+            } else {
+                // Fallback for flat items
+                MenuContent(items: state.items, onItemSelected: onItemSelected)
+            }
+        } label: {
+                labelContent
+           
         }
     }
     
     @ViewBuilder
     var labelContent: some View {
         HStack(spacing: 6) {
-            // If specific icon provided
             if let icon = state.systemIconName {
                 Image(systemName: icon)
             }
-            
-            // Label
             if let text = state.label {
                 Text(text)
             }
-            
-            // Fallback if neither
             if state.label == nil && state.systemIconName == nil {
                Image(systemName: "chevron.up.chevron.down")
             }
         }
     }
-    
-    @ViewBuilder
-    var backgroundView: some View {
-        if let custom = state.customColor {
-            custom
-        } else {
-            switch state.styleIndex {
-            case 1: Color.blue
-            case 2: Color.blue.opacity(0.2)
-            case 3: Color.gray.opacity(0.2)
-            default: Color.clear
-            }
-        }
-    }
-    
-    func defaultTextColor(style: Int) -> Color {
-        if style == 1 { return .white } // Filled
-        if style == 2 { return .blue } // Tinted
-        return .primary
-    }
-    
-    func fontForSize(_ index: Int) -> Font {
-        switch index {
-        case 0: return .caption
-        case 1: return .callout
-        case 2: return .body
-        case 3: return .title3
-        default: return .body
-        }
-    }
 }
 
-
-// MARK: - Extensions & Styles
-
-struct NativeGlassButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(.regularMaterial)
-            .opacity(configuration.isPressed ? 0.7 : 1.0)
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-    }
-}
-
-extension ButtonStyle where Self == NativeGlassButtonStyle {
-    static var cupertinoGlass: NativeGlassButtonStyle { NativeGlassButtonStyle() }
-}
-
-extension View {
-    func applyCornerRadius(_ radius: CGFloat) -> some View {
-        // Use a continuous curve if available (iOS 13+ has RoundedRectangle, iOS 15 prefers containerShape?)
-        // Standard clipShape is fine.
-        self.clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-    }
-}
-
-
-
+// MARK: - Content Helpers
 struct MenuContent: View {
     let items: [MenuItem]
     let onItemSelected: ([Int]) -> Void
@@ -274,13 +331,34 @@ struct MenuContent: View {
                 Button(role: item.isDestructive ? .destructive : nil) {
                     onItemSelected(item.path)
                 } label: {
-                    if let icon = item.systemIconName {
-                        Label(item.label, systemImage: icon)
-                    } else {
-                        Text(item.label)
+                    HStack {
+                       if let icon = item.systemIconName {
+                           Image(systemName: icon)
+                       }
+                       Text(item.label)
+                       Spacer()
+                       
+                       // Suffix Icon
+                       if let trailing = item.trailingIconName {
+                          Image(systemName: trailing)
+                       }
                     }
                 }
+                .disabled(!item.isEnabled)
             }
+        }
+    }
+}
+
+// MARK: - Extensions
+
+extension View {
+    @ViewBuilder
+    func isCircle(_ isActive: Bool) -> some View {
+        if isActive {
+            self.clipShape(Circle())
+        } else {
+            self
         }
     }
 }
