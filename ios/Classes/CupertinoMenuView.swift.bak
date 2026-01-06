@@ -1,0 +1,367 @@
+import Flutter
+import UIKit
+
+class CupertinoMenuView: NSObject, FlutterPlatformView {
+    private let channel: FlutterMethodChannel
+    private let button: UIButton
+    
+    // Properties to store current state
+    private var labels: [String] = []
+    private var symbols: [String] = [] // Item icons
+    private var dividers: [Bool] = []
+    private var isDestructive: [Bool] = []
+    private var childItems: [[String: Any]] = [] // Nested structure
+    
+    // Button styling props
+    private var buttonLabel: String?
+    private var buttonIcon: String?
+    private var styleIndex: Int = 5
+    private var controlSizeIndex: Int = 2
+    private var customColor: UIColor?
+    private var customTextColor: UIColor?
+    private var borderRadius: CGFloat?
+
+    init(
+        frame: CGRect,
+        viewIdentifier viewId: Int64,
+        arguments args: Any?,
+        messenger: FlutterBinaryMessenger
+    ) {
+        channel = FlutterMethodChannel(name: "flutter_cupertino/menu_\(viewId)", binaryMessenger: messenger)
+        button = UIButton(type: .system)
+        
+        super.init()
+        
+        // Setup Button actions
+        if #available(iOS 14.0, *) {
+            button.showsMenuAsPrimaryAction = true
+        } else {
+            // Fallback for older iOS if needed, though podspec says 15.0
+        }
+        
+        // Initial Update
+        if let args = args as? [String: Any] {
+            update(with: args)
+        }
+        
+        channel.setMethodCallHandler { [weak self] call, result in
+            self?.handle(call, result: result)
+        }
+    }
+
+    func view() -> UIView {
+        return button
+    }
+    
+    private func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        if call.method == "update", let args = call.arguments as? [String: Any] {
+            update(with: args)
+            result(nil)
+        } else {
+            result(FlutterMethodNotImplemented)
+        }
+    }
+
+    private func update(with args: [String: Any]) {
+        // Parse Button Props
+        if let v = args["label"] as? String { buttonLabel = v }
+        else if args.keys.contains("label") { buttonLabel = nil }
+        
+        if let v = args["systemIconName"] as? String, !v.isEmpty { buttonIcon = v }
+        else if args.keys.contains("systemIconName") { buttonIcon = nil }
+        
+        if let v = args["style"] as? Int { styleIndex = v }
+        if let v = args["controlSize"] as? Int { controlSizeIndex = v }
+        
+        if let c = args["color"] as? Int { customColor = UIColor(argb: c) }
+        else if args.keys.contains("color") { customColor = nil }
+        
+        if let c = args["textColor"] as? Int { customTextColor = UIColor(argb: c) }
+        else if args.keys.contains("textColor") { customTextColor = nil }
+        
+        if let r = args["borderRadius"] as? Double { borderRadius = CGFloat(r) }
+        
+        // Parse Menu Items
+        if let items = args["items"] as? [[String: Any]] {
+            parseItems(items)
+            rebuildMenu()
+        }
+        
+        applyUsageStyle()
+    }
+    
+    private func parseItems(_ items: [[String: Any]]) {
+        // We defer parsing to recursive menu builder, 
+        // but we keep the raw list for root
+        self.childItems = items
+    }
+    
+    private func applyUsageStyle() {
+        guard #available(iOS 15.0, *) else { return }
+        
+        var config: UIButton.Configuration
+        
+        // Map styleIndex to Configuration
+        // 0: automatic, 1: filled, 2: tinted, 3: gray, 4: plain, 5: glass, 6: glassProminent
+        switch styleIndex {
+        case 1: config = .filled()
+        case 2: config = .tinted()
+        case 3: config = .gray()
+        case 4: config = .plain()
+        case 5, 0: // Glass / Auto
+             config = .plain() // Base for glass
+        case 6: // Glass Prominent
+             config = .plain() // Base for prominent
+        default: config = .plain()
+        }
+        
+        // Content
+        config.title = buttonLabel
+        config.imagePadding = 4
+        
+        // Icon
+        if let iconName = buttonIcon {
+            let symbolConfig = UIImage.SymbolConfiguration(scale: mapControlSizeToScale())
+                .applying(UIImage.SymbolConfiguration(weight: .medium))
+            config.image = UIImage(systemName: iconName, withConfiguration: symbolConfig)
+        }
+        
+        // Chevron logic: Show if NO label and NO icon? 
+        // Or user said: "chevron... only there by default if user didnt provide label or icon"
+        // Wait, usually chevron implies "this is a menu".
+        // If I have a label or icon, hide chevron. If I have nothing, maybe show chevron?
+        // Let's follow: If label/icon is set, NO chevron.
+        // Actually, UIButton does not add a chevron automatically for menus unless configured.
+        // We will add it manually if needed, but for now reset it.
+        // For the "default" (no label/icon) case, let's substitute a default icon?
+        if buttonLabel == nil && buttonIcon == nil {
+             config.image = UIImage(systemName: "chevron.up.chevron.down")
+             config.imagePlacement = .trailing
+        } else {
+             // Basic icon
+             config.imagePlacement = .leading
+             if let icon = buttonIcon {
+                 config.image = UIImage(systemName: icon)
+             } else {
+                 config.image = nil
+             }
+        }
+
+        // Sizing
+        config.buttonSize = mapControlSize()
+        config.cornerStyle = .fixed
+        config.background.cornerRadius = borderRadius ?? 8
+        
+        // Colors
+        if let textColor = customTextColor {
+            config.baseForegroundColor = textColor
+        } else {
+            // Default text colors for styles
+            if styleIndex == 1 { config.baseForegroundColor = .white }
+            else if styleIndex == 2 { config.baseForegroundColor = .systemBlue }
+            else { config.baseForegroundColor = .label }
+        }
+        
+        if let bg = customColor {
+            config.baseBackgroundColor = bg
+        }
+        
+        // GLASS EFFECT
+        if styleIndex == 5 { // Glass (Regular)
+            let effect = UIBlurEffect(style: .regular)
+            let effectView = UIVisualEffectView(effect: effect)
+            effectView.isUserInteractionEnabled = false // Let touches pass to button
+            config.background.customView = effectView
+        } else if styleIndex == 6 { // Glass Prominent
+             let effect = UIBlurEffect(style: .systemThickMaterial) // Thicker
+             let effectView = UIVisualEffectView(effect: effect)
+             effectView.isUserInteractionEnabled = false
+             config.background.customView = effectView
+        }
+        
+        button.configuration = config
+    }
+    
+    // Recursive Menu Builder
+    private func buildMenu(items: [[String: Any]]) -> UIMenu {
+        var elements: [UIMenuElement] = []
+        
+        for item in items {
+            let type = item["type"] as? String ?? "action"
+            
+            if type == "divider" {
+                // Inline menu with .displayInline option creates dividers between groups
+                // But UIMenu doesn't have a direct "Divider" element. 
+                // We typically use displayInline submenus to group things.
+                // For simplicity in this structure provided by Dart (flat list with dividers),
+                // we might need to restructure. 
+                // However, simplistic divider support:
+                // We can't insert a literal line. We have to group preceeding items.
+                // Ignoring for 1:1 direct mapping, simply skipped.
+                continue 
+            }
+            
+            let label = item["label"] as? String ?? ""
+            let iconName = item["systemIconName"] as? String
+            let isDestructive = item["isDestructive"] as? Bool ?? false
+            let children = item["children"] as? [[String: Any]]
+            let index = item["index"] as? Int ?? -1
+            
+            var image: UIImage?
+            if let i = iconName { image = UIImage(systemName: i) }
+            
+            if let children = children, !children.isEmpty {
+                // Submenu
+                let submenu = buildMenu(items: children)
+                // Re-wrap as named submenu
+                let menuAction = UIMenu(title: label, image: image, children: submenu.children)
+                elements.append(menuAction)
+            } else {
+                // Action
+                let attributes: UIMenuElement.Attributes = isDestructive ? .destructive : []
+                let action = UIAction(title: label, image: image, attributes: attributes) { [weak self] _ in
+                    // Need to identify item. Dart sends flattened index logic, but here we rebuild.
+                    // We must pass the path back.
+                    // The Flutter side logic depends on `onItemSelected` passing a list of indices (path).
+                    // But standard UIAction doesn't hold context easily. 
+                    // We simply pass the 'index' stored in the item map from Dart.
+                    // Wait, Dart provided `index`. 
+                    // Let's pass [index] for now. The Dart logic `_triggerAction` expects a PATH?
+                    // "Recursive step... path.sublist(1)"
+                    // Yes. This means we need the FULL path.
+                    // Since we are rebuilding, preserving the path is hard without extra struct.
+                    // BUT: The original implementation just passed the flat "index" of the pressed item if it was flat...
+                    // Actually Dart sends `items` with nested `children`.
+                    // The `CupertinoMenuItem.toMap` adds `index` : key.
+                    // So every item has its own local index.
+                    // We need to reconstruct the chain.
+                    // Simplified: We assume Dart handles flat ID lookup if we passed a unique ID?
+                    // No, Dart expects list<int>.
+                    // For now, let's assume we can just pass [index] and Dart finds it?
+                    // No, nested items need [parentIndex, childIndex].
+                    // Since this native rewrite is complex, let's simplify: 
+                    // We will just invoke with the 'index' payload if Dart supports it.
+                    // IF Dart code logic `_triggerAction` expects path, we are in trouble unless we bake path into the loop.
+                    // Let's rely on the fact that `children` are processed.
+                    
+                    // Hack: We only support single level or we assume `index` is unique if we flatten? 
+                    // The Dart code: `if (path.length == 1) ... else ... triggerAction(element.children, path.sublist(1))`
+                    // It traverses. So we MUST provide the path.
+                    // Since `buildMenu` is recursive, we can't easily bubble the path up unless we pass it down.
+                    // Updating signature of buildMenu to take `prefix: [Int]`.
+                    
+                    // We will fix that below.
+                }
+                // We need to attach the path.
+                // Re-writing loop below to support recursion with path.
+            }
+        }
+        return UIMenu(children: elements)
+    }
+    
+    private func rebuildMenu() {
+        button.menu = buildMenuRecursive(items: self.childItems, pathPrefix: [])
+    }
+    
+    private func buildMenuRecursive(items: [[String: Any]], pathPrefix: [Int]) -> UIMenu {
+        var elements: [UIMenuElement] = []
+        var currentGroup: [UIMenuElement] = []
+        
+        // Helper to flush current items into an inline menu (simulating divider separation)
+        func flushGroup() {
+            if !currentGroup.isEmpty {
+                // If we have elements, add them. 
+                // If we hit a divider, we add these as an "inline" group to create separation
+                let groupMenu = UIMenu(options: .displayInline, children: currentGroup)
+                elements.append(groupMenu)
+                currentGroup = []
+            }
+        }
+        
+        for item in items {
+            let type = item["type"] as? String ?? "action"
+            
+            if type == "divider" {
+                flushGroup()
+                continue
+            }
+            
+            let label = item["label"] as? String ?? ""
+            let iconName = item["systemIconName"] as? String
+            let isDestructive = item["isDestructive"] as? Bool ?? false
+            let children = item["children"] as? [[String: Any]]
+            let index = item["index"] as? Int ?? 0 // Local index provided by Dart
+            
+            let currentPath = pathPrefix + [index]
+            
+            var image: UIImage?
+            if let i = iconName { image = UIImage(systemName: i) }
+            
+            if let children = children, !children.isEmpty {
+                // Submenu
+                let subMenu = buildMenuRecursive(items: children, pathPrefix: currentPath)
+                let menuAction = UIMenu(title: label, image: image, children: subMenu.children)
+                currentGroup.append(menuAction)
+            } else {
+                // Leaf Action
+                let attributes: UIMenuElement.Attributes = isDestructive ? .destructive : []
+                let action = UIAction(title: label, image: image, attributes: attributes) { [weak self] _ in
+                    self?.channel.invokeMethod("onItemSelected", arguments: currentPath)
+                }
+                currentGroup.append(action)
+            }
+        }
+        
+        // Flush remaining
+        if !currentGroup.isEmpty {
+            // Check if we already have groups (meaning we had dividers).
+            // If explicit dividers were used, we must wrap consistent inline groups.
+            // If no dividers were used at all, we can just return the raw actions?
+            // Apple recommends always using inline groups if you want separators.
+            let groupMenu = UIMenu(options: .displayInline, children: currentGroup)
+            elements.append(groupMenu)
+        }
+        
+        return UIMenu(children: elements)
+    }
+
+    // Helpers
+    private func mapControlSize() -> UIButton.Configuration.Size {
+        if #available(iOS 15.0, *) {
+            switch controlSizeIndex {
+            case 0: return .mini
+            case 1: return .small
+            case 2: return .medium // "regular"
+            case 3: return .large
+            case 4: 
+                // extraLarge only on very new iOS or not in UIButton.Configuration.Size enum?
+                // The enum has mini, small, medium, large.
+                // "extraLarge" might just be Large or handled via font scaling.
+                return .large
+            default: return .medium
+            }
+        }
+        return .medium
+    }
+    
+    private func mapControlSizeToScale() -> UIImage.SymbolScale {
+        switch controlSizeIndex {
+        case 0: return .small
+        case 1: return .small
+        case 2: return .medium
+        case 3: return .large
+        case 4: return .large
+        default: return .medium
+        }
+    }
+}
+
+extension UIColor {
+    convenience init(argb: Int) {
+        let a = CGFloat((argb >> 24) & 0xFF) / 255.0
+        let r = CGFloat((argb >> 16) & 0xFF) / 255.0
+        let g = CGFloat((argb >> 8) & 0xFF) / 255.0
+        let b = CGFloat(argb & 0xFF) / 255.0
+        self.init(red: r, green: g, blue: b, alpha: a)
+    }
+}

@@ -62,7 +62,7 @@ class CupertinoMenu extends StatefulWidget {
   final Color? color;
   final Color? textColor;
   final double? borderRadius;
-  final bool usePopover;
+  final CupertinoControlSize controlSize;
 
   const CupertinoMenu({
     super.key,
@@ -72,10 +72,10 @@ class CupertinoMenu extends StatefulWidget {
     this.width,
     this.height,
     this.style = CupertinoButtonStyle.glass,
+    this.controlSize = CupertinoControlSize.regular,
     this.color,
     this.textColor,
     this.borderRadius,
-    this.usePopover = false,
   });
 
   @override
@@ -86,22 +86,51 @@ class _CupertinoMenuState extends State<CupertinoMenu> {
   MethodChannel? _channel;
 
   @override
-  Widget build(BuildContext context) {
-    const String viewType = 'flutter_cupertino/menu';
-    final Map<String, dynamic> creationParams = <String, dynamic>{
+  void didUpdateWidget(covariant CupertinoMenu oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Logic to detect changes
+    bool shouldUpdate =
+        widget.label != oldWidget.label ||
+        widget.systemIconName != oldWidget.systemIconName ||
+        widget.style != oldWidget.style ||
+        widget.color != oldWidget.color ||
+        widget.textColor != oldWidget.textColor ||
+        widget.borderRadius != oldWidget.borderRadius ||
+        widget.controlSize != oldWidget.controlSize ||
+        widget.children != oldWidget.children;
+
+    if (shouldUpdate) {
+      print("CupertinoMenu: sending update to native view");
+      _updateNativeView();
+    }
+  }
+
+  void _updateNativeView() {
+    final params = _getCreationParams();
+    _channel?.invokeMethod('update', params);
+  }
+
+  Map<String, dynamic> _getCreationParams() {
+    return <String, dynamic>{
       'label': widget.label,
       'systemIconName': widget.systemIconName,
       'style': widget.style.index,
+      'controlSize': widget.controlSize.index,
       'color': widget.color?.value,
       'textColor': widget.textColor?.value,
       'borderRadius': widget.borderRadius,
-      'usePopover': widget.usePopover,
       'items': widget.children
           .asMap()
           .entries
           .map((entry) => entry.value.toMap(entry.key))
           .toList(),
     };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const String viewType = 'flutter_cupertino/menu';
+    final Map<String, dynamic> creationParams = _getCreationParams();
 
     return SizedBox(
       width: widget.width ?? 150, // Default width

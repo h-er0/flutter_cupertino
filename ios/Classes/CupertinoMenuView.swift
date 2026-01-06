@@ -1,9 +1,14 @@
 import Flutter
-import SwiftUI
 import UIKit
+import SwiftUI
+
+// MARK: - Platform View
 
 class CupertinoMenuView: NSObject, FlutterPlatformView {
     private var _view: UIView
+    private let channel: FlutterMethodChannel
+    private let state = MenuState()
+    private var hostingVC: UIHostingController<SwiftUIMenuView>?
 
     init(
         frame: CGRect,
@@ -11,213 +16,282 @@ class CupertinoMenuView: NSObject, FlutterPlatformView {
         arguments args: Any?,
         messenger: FlutterBinaryMessenger
     ) {
-        let channel = FlutterMethodChannel(name: "flutter_cupertino/menu_\(viewId)", binaryMessenger: messenger)
+        channel = FlutterMethodChannel(name: "flutter_cupertino/menu_\(viewId)", binaryMessenger: messenger)
+        _view = UIView() // Initialize with dummy view to satisfy super.init requirement
         
-        var label: String?
-        var systemIconName: String = ""
-        var items: [[String: Any]] = []
-        var styleIndex: Int = 5 // glass default
-        var color: Int?
-        var textColor: Int?
-        var borderRadius: Double?
-        var usePopover: Bool = false
-
-        if let args = args as? [String: Any] {
-            label = args["label"] as? String
-            systemIconName = args["systemIconName"] as? String ?? "list.bullet"
-            items = args["items"] as? [[String: Any]] ?? []
-            styleIndex = args["style"] as? Int ?? 5
-            color = args["color"] as? Int
-            textColor = args["textColor"] as? Int
-            borderRadius = args["borderRadius"] as? Double
-            usePopover = args["usePopover"] as? Bool ?? false
-        }
-
-        let menuView = MenuView(
-            label: label,
-            systemIconName: systemIconName,
-            styleIndex: styleIndex,
-            color: color,
-            textColor: textColor,
-            borderRadius: borderRadius,
-            usePopover: usePopover,
-            items: items,
-            onItemSelected: { indexPath in
-                channel.invokeMethod("onItemSelected", arguments: indexPath)
-            }
-        )
-
-        let controller = UIHostingController(rootView: menuView)
-        _view = controller.view
-        _view.backgroundColor = .clear
         super.init()
+        
+        // Define the closure (capturing channel which is now a property, but we need weak self or weak channel)
+        // Since we are now after super.init, we can use self.channel or the local channel.
+        // But to be safe with captures:
+        let currentChannel = channel
+        let selectionCallback: ([Int]) -> Void = { path in
+            currentChannel.invokeMethod("onItemSelected", arguments: path)
+        }
+        
+        // Create the SwiftUI view wrapped in a HostingController
+        let menuView = SwiftUIMenuView(state: state, onItemSelected: selectionCallback)
+        let hostingVC = UIHostingController(rootView: menuView)
+        hostingVC.view.backgroundColor = .clear // Ensure transparency for glass effect
+        self.hostingVC = hostingVC
+        self._view = hostingVC.view
+        
+        // Initial parse
+        if let args = args as? [String: Any] {
+            update(with: args)
+        }
+        
+        channel.setMethodCallHandler { [weak self] call, result in
+            self?.handle(call, result: result)
+        }
     }
 
     func view() -> UIView {
         return _view
     }
+    
+    private func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        if call.method == "update", let args = call.arguments as? [String: Any] {
+            update(with: args)
+            result(nil)
+        } else {
+            result(FlutterMethodNotImplemented)
+        }
+    }
+
+    private func update(with args: [String: Any]) {
+        // Run on main thread to ensure UI updates
+        DispatchQueue.main.async { [weak self] in
+            self?.state.update(from: args)
+        }
+    }
 }
 
-struct MenuView: View {
-    let label: String?
-    let systemIconName: String
-    let styleIndex: Int
-    let color: Int?
-    let textColor: Int?
-    let borderRadius: Double?
-    let usePopover: Bool
-    let items: [[String: Any]]
-    let onItemSelected: ([Int]) -> Void
-    
-    @State private var isPopoverPresented = false
+// MARK: - ViewModel
 
+class MenuState: ObservableObject {
+    @Published var label: String?
+    @Published var systemIconName: String?
+    @Published var styleIndex: Int = 5
+    @Published var controlSizeIndex: Int = 2
+    @Published var customColor: Color?
+    @Published var customTextColor: Color?
+    @Published var borderRadius: CGFloat = 8
+    @Published var items: [MenuItem] = []
+    
+    // Explicitly process updates to trigger objectWillChange
+    func update(from args: [String: Any]) {
+        if let v = args["label"] as? String { label = v }
+        else if args.keys.contains("label") { label = nil }
+        
+        if let v = args["systemIconName"] as? String, !v.isEmpty { systemIconName = v }
+        else if args.keys.contains("systemIconName") { systemIconName = nil }
+        
+        if let v = args["style"] as? Int { styleIndex = v }
+        if let v = args["controlSize"] as? Int { controlSizeIndex = v }
+        
+        if let c = args["color"] as? Int { customColor = Color(uiColor: UIColor(argb: c)) }
+        else if args.keys.contains("color") { customColor = nil }
+        
+        if let c = args["textColor"] as? Int { customTextColor = Color(uiColor: UIColor(argb: c)) }
+        else if args.keys.contains("textColor") { customTextColor = nil }
+        
+        if let r = args["borderRadius"] as? Double { borderRadius = CGFloat(r) }
+        
+        if let rawItems = args["items"] as? [[String: Any]] {
+            self.items = parseItems(rawItems, prefix: [])
+        }
+    }
+    
+    private func parseItems(_ raw: [[String: Any]], prefix: [Int]) -> [MenuItem] {
+        var results: [MenuItem] = []
+        for item in raw {
+            let label = item["label"] as? String ?? ""
+            let icon = item["systemIconName"] as? String
+            let isDestructive = item["isDestructive"] as? Bool ?? false
+            let type = item["type"] as? String ?? "action"
+            let index = item["index"] as? Int ?? 0
+            
+            let currentPath = prefix + [index]
+            
+            var children: [MenuItem]? = nil
+            if let rawChildren = item["children"] as? [[String: Any]] {
+                children = parseItems(rawChildren, prefix: currentPath)
+            }
+            
+            results.append(MenuItem(
+                label: label,
+                systemIconName: icon,
+                isDestructive: isDestructive,
+                type: type,
+                path: currentPath,
+                children: children
+            ))
+        }
+        return results
+    }
+}
+
+struct MenuItem: Identifiable {
+    let id = UUID()
+    let label: String
+    let systemIconName: String?
+    let isDestructive: Bool
+    let type: String
+    let path: [Int]
+    let children: [MenuItem]?
+}
+
+// MARK: - SwiftUI Views
+
+struct SwiftUIMenuView: View {
+    @ObservedObject var state: MenuState
+    var onItemSelected: ([Int]) -> Void
+    
     var body: some View {
-        // We use Menu for all cases because SwiftUI's .popover() renders as a full-screen sheet 
-        // on iPhone (compact horizontal size class), which is not the desired "popup" behavior.
-        // The native implementation referenced uses UIMenu (showsMenuAsPrimaryAction),
-        // which corresponds to SwiftUI's Menu view.
         Menu {
-            MenuContent(items: items, parentPath: [], onItemSelected: onItemSelected)
+            MenuContent(items: state.items, onItemSelected: onItemSelected)
         } label: {
-            labelView
+            // Trigger Button
+            // We apply the specific style based on the index, but leveraging the clean .glass style
+            Group {
+                if state.styleIndex == 5 || state.styleIndex == 6 {
+                    Button(action: {}) {
+                       labelContent
+                    }
+                    .buttonStyle(.cupertinoGlass)
+                } else {
+                    Button(action: {}) {
+                       labelContent
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(backgroundView)
+                    }
+                    .buttonStyle(.plain) // No extra padding/background from style
+                }
+            }
+            .foregroundColor(state.customTextColor ?? defaultTextColor(style: state.styleIndex))
+            .font(fontForSize(state.controlSizeIndex))
+            .applyCornerRadius(state.borderRadius)
+            .allowsHitTesting(false)
         }
     }
     
-    var labelView: some View {
-        HStack(spacing: 4) {
-            if let label = label {
-                Text(label)
-                    .font(.body)
-            }
-            Image(systemName: systemIconName)
-            if label == nil {
-                // If only icon, no chevron needed usually, or maybe imply it's a menu
-            } else {
-                 Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption)
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(backgroundView)
-        .clipShape(RoundedRectangle(cornerRadius: borderRadius ?? 8))
-        .foregroundColor(resolveTextColor())
-    }
-
     @ViewBuilder
-    private var backgroundView: some View {
-        if let color = color {
-            Color(int: color)
-        } else {
-            // Default styling based on styleIndex
-            // 0: automatic, 1: filled, 2: tinted, 3: gray, 4: plain, 5: glass, 6: glassProminent
-            if styleIndex == 5 { // Glass
-                if #available(iOS 16.0, *) {
-                    Rectangle().fill(.ultraThinMaterial)
-                } else {
-                    Color(UIColor.systemFill)
-                }
-            } else if styleIndex == 6 { // Glass Prominent
-                if #available(iOS 16.0, *) {
-                     Rectangle().fill(.thickMaterial)
-                } else {
-                    Color(UIColor.secondarySystemFill)
-                }
-            } else if styleIndex == 1 { // Filled
-                Color.blue // Default filled color
-            } else if styleIndex == 2 { // Tinted
-                Color.blue.opacity(0.15)
-            } else if styleIndex == 3 { // Gray
-                Color(UIColor.systemGray5)
-            } else if styleIndex == 4 { // Plain
-                Color.clear
-            } else { // Automatic
-                 if #available(iOS 16.0, *) {
-                    Rectangle().fill(.ultraThinMaterial)
-                } else {
-                    Color(UIColor.systemFill)
-                }
+    var labelContent: some View {
+        HStack(spacing: 6) {
+            // If specific icon provided
+            if let icon = state.systemIconName {
+                Image(systemName: icon)
+            }
+            
+            // Label
+            if let text = state.label {
+                Text(text)
+            }
+            
+            // Fallback if neither
+            if state.label == nil && state.systemIconName == nil {
+               Image(systemName: "chevron.up.chevron.down")
             }
         }
     }
     
-    private func resolveTextColor() -> Color {
-        if let textColor = textColor {
-            return Color(int: textColor)
+    @ViewBuilder
+    var backgroundView: some View {
+        if let custom = state.customColor {
+            custom
+        } else {
+            switch state.styleIndex {
+            case 1: Color.blue
+            case 2: Color.blue.opacity(0.2)
+            case 3: Color.gray.opacity(0.2)
+            default: Color.clear
+            }
         }
-        if styleIndex == 1 { // Filled
-            return .white
-        }
-        if styleIndex == 2 { // Tinted
-            return .blue
-        }
-        if styleIndex == 5 || styleIndex == 6 {
-             return .primary
-        }
+    }
+    
+    func defaultTextColor(style: Int) -> Color {
+        if style == 1 { return .white } // Filled
+        if style == 2 { return .blue } // Tinted
         return .primary
     }
-}
-
-extension Color {
-    init(int: Int) {
-        let red = Double((int >> 16) & 0xFF) / 255.0
-        let green = Double((int >> 8) & 0xFF) / 255.0
-        let blue = Double(int & 0xFF) / 255.0
-        let alpha = Double((int >> 24) & 0xFF) / 255.0 // Dart Color is ARGB
-        self.init(.sRGB, red: red, green: green, blue: blue, opacity: alpha)
+    
+    func fontForSize(_ index: Int) -> Font {
+        switch index {
+        case 0: return .caption
+        case 1: return .callout
+        case 2: return .body
+        case 3: return .title3
+        default: return .body
+        }
     }
 }
 
+
+// MARK: - Extensions & Styles
+
+struct NativeGlassButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(.regularMaterial)
+            .opacity(configuration.isPressed ? 0.7 : 1.0)
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+    }
+}
+
+extension ButtonStyle where Self == NativeGlassButtonStyle {
+    static var cupertinoGlass: NativeGlassButtonStyle { NativeGlassButtonStyle() }
+}
+
+extension View {
+    func applyCornerRadius(_ radius: CGFloat) -> some View {
+        // Use a continuous curve if available (iOS 13+ has RoundedRectangle, iOS 15 prefers containerShape?)
+        // Standard clipShape is fine.
+        self.clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+    }
+}
+
+
+
 struct MenuContent: View {
-    let items: [[String: Any]]
-    let parentPath: [Int]
+    let items: [MenuItem]
     let onItemSelected: ([Int]) -> Void
-
+    
     var body: some View {
-        ForEach(0..<items.count, id: \.self) { i in
-            let item = items[i]
-            let type = item["type"] as? String ?? "action"
-            
-            if type == "divider" {
+        ForEach(items) { item in
+            if item.type == "divider" {
                 Divider()
+            } else if let children = item.children, !children.isEmpty {
+                Menu {
+                    MenuContent(items: children, onItemSelected: onItemSelected)
+                } label: {
+                    Label(item.label, systemImage: item.systemIconName ?? "")
+                }
             } else {
-                let label = item["label"] as? String ?? ""
-                let icon = item["systemIconName"] as? String
-                let isDestructive = item["isDestructive"] as? Bool ?? false
-                let index = item["index"] as? Int ?? i
-                let children = item["children"] as? [[String: Any]]
-                let currentPath = parentPath + [index]
-
-                if let children = children, !children.isEmpty {
-                    // Nested Menu
-                    Menu {
-                        MenuContent(items: children, parentPath: currentPath, onItemSelected: onItemSelected)
-                    } label: {
-                        HStack {
-                            if let icon = icon {
-                                Label(label, systemImage: icon)
-                            } else {
-                                Text(label)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                } else {
-                    // Standard Action Item
-                    Button(role: isDestructive ? .destructive : nil) {
-                        onItemSelected(currentPath)
-                    } label: {
-                        if let icon = icon {
-                            Label(label, systemImage: icon)
-                        } else {
-                            Text(label)
-                        }
+                Button(role: item.isDestructive ? .destructive : nil) {
+                    onItemSelected(item.path)
+                } label: {
+                    if let icon = item.systemIconName {
+                        Label(item.label, systemImage: icon)
+                    } else {
+                        Text(item.label)
                     }
                 }
             }
         }
+    }
+}
+
+// Helper Extension for UIColor handling
+extension UIColor {
+    convenience init(argb: Int) {
+        let a = CGFloat((argb >> 24) & 0xFF) / 255.0
+        let r = CGFloat((argb >> 16) & 0xFF) / 255.0
+        let g = CGFloat((argb >> 8) & 0xFF) / 255.0
+        let b = CGFloat(argb & 0xFF) / 255.0
+        self.init(red: r, green: g, blue: b, alpha: a)
     }
 }

@@ -276,14 +276,16 @@ class _MyAppState extends State<MyApp> {
 
                 const SizedBox(height: 30),
                 const Text(
-                  "Cupertino Popup Menu (Glass)",
+                  "Cupertino Popup Menu (Glass & Large)",
                   style: TextStyle(color: Colors.white70),
                 ),
                 const SizedBox(height: 10),
                 CupertinoMenu(
                   label: "Options",
+                  controlSize: CupertinoControlSize.large,
                   systemIconName: "ellipsis.circle",
                   width: 140,
+                  height: 50, // Increased height for large control
                   children: [
                     CupertinoMenuItem(
                       label: "Share",
@@ -324,14 +326,64 @@ class _MyAppState extends State<MyApp> {
 
                 const SizedBox(height: 30),
                 const Text(
-                  "Popover Mode (Glass Prominent)",
+                  "Medium & Small Menus",
+                  style: TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CupertinoMenu(
+                      label: "Med",
+                      controlSize: CupertinoControlSize.regular,
+                      systemIconName: "list.bullet",
+                      width: 100,
+                      height: 40,
+                      children: [
+                        CupertinoMenuItem(
+                          label: "View Report",
+                          systemIconName: "doc.text",
+                          onPressed: () => debugPrint("View Report"),
+                        ),
+                        CupertinoMenuItem(
+                          label: "Analysis",
+                          systemIconName: "chart.pie",
+                          onPressed: () => debugPrint("Analysis"),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 20),
+                    CupertinoMenu(
+                      label: "Small",
+                      controlSize: CupertinoControlSize.small,
+                      systemIconName: "gear",
+                      width: 80,
+                      height: 32,
+                      children: [
+                        CupertinoMenuItem(
+                          label: "View Report",
+                          systemIconName: "doc.text",
+                          onPressed: () => debugPrint("View Report"),
+                        ),
+                        CupertinoMenuItem(
+                          label: "Analysis",
+                          systemIconName: "chart.pie",
+                          onPressed: () => debugPrint("Analysis"),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 30),
+                const Text(
+                  "Popup Icon-Only (Glass Prominent)",
                   style: TextStyle(color: Colors.white70),
                 ),
                 const SizedBox(height: 10),
                 CupertinoMenu(
                   systemIconName: "chart.bar.doc.horizontal",
                   style: CupertinoButtonStyle.glassProminent,
-                  usePopover: true,
                   width: 60,
                   children: [
                     CupertinoMenuItem(
